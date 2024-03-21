@@ -1,0 +1,40 @@
+<!-- 
+mountSuspense
+  createElement
+  createSuspenseBoundary
+    suspense.registerDep
+      instance.asyncDep
+        handleError
+        handleSetupResult
+        setupRenderEffect
+        remove
+        updateHOCHostEl
+        suspense.resolve
+    suspense.resolve
+      next
+      unmount
+      move
+      setActiveBranch
+      parent.effects.push
+      queuePostFlushCb
+      triggerEvent
+  patch
+  triggerEvent
+  setActiveBranch
+  suspense.resolve
+
+setupStatefulComponent
+  isPromise
+
+setupRenderEffect 
+  componentUpdateFn
+    queuePostRenderEffect
+
+patchSuspense
+  isSameVNodeType
+  patch
+  suspense.resolve
+  setActiveBranch
+  unmount
+  createElement
+ -->

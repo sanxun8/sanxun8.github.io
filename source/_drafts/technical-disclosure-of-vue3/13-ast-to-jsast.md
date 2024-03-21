@@ -1,0 +1,33 @@
+<!-- 
+baseCompile
+  getBaseTransformPreset
+  transform
+    createTransformContext
+    traverseNode
+      isArray
+      context.helper
+      traverseNode
+    hoistStatic
+      walk
+        context.hoist
+          createSimpleExpression
+        getPatchFlag
+        getGeneratedPropsConstantType
+        getNodeProps
+        walk
+        context.transformHoist
+      isSingleElementRoot
+    createRootCodegen
+      isSingleElementRoot
+      makeBlock
+      createVNodeCall
+    context.helpers.keys
+  extend
+
+transformElement
+  postTransformElement 
+    createVNodeCall
+      context.helper
+      getVNodeBlockHelper
+      getVNodeHelper
+ -->

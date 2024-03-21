@@ -1,0 +1,54 @@
+<!-- 
+BaseTransitionImpl.setup
+  getCurrentInstance
+  useTransitionState
+    render
+      getTransitionRawChildren
+      slots.default
+      toRaw
+      getKeepAliveChild
+      emptyPlaceholder
+      resolveTransitionHooks
+        callHook 
+          callWithAsyncErrorHandling
+          hook
+        hook.beforeEnter
+          onBeforeEnter
+        hooks.enter
+          onEnter
+        hooks.leave
+          onBeforeLeave
+        hooks.clone
+      setTransitionHooks
+      isSameVNodeType
+      leavingHooks.afterLeave
+        instance.update
+      leavingHooks.delayLeave
+        getLeavingNodesForType
+          el._leaveCb
+            earlyRemove
+
+
+resolveTransitionProps
+  extend
+  makeEnterHook
+    finishEnter
+    nextFrame
+    removeTransitionClass
+    addTransitionClass
+    whenTransitionEnds
+
+mountElement 
+  transition.beforeEnter
+  queuePostRenderEffect
+  transition.enter
+
+remove 
+  performRemove 
+    hostRemove
+    transition.afterLeave
+  performLeave 
+    leave
+    delayLeave
+    performLeave
+ -->
