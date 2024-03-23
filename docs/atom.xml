@@ -60,6 +60,27 @@
   </entry>
   
   <entry>
+    <title>单例模式：实现全局唯一实例的设计模式</title>
+    <link href="https://sanxun8.github.io/2024/03/19/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F/"/>
+    <id>https://sanxun8.github.io/2024/03/19/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F/</id>
+    <published>2024-03-19T06:12:52.789Z</published>
+    <updated>2024-03-23T09:30:29.280Z</updated>
+    
+    <content type="html"><![CDATA[<p>单例模式是一种常见的设计模式，它通过限制类的实例化次数，确保只有一个实例存在。</p><h3 id="示例场景-vue3创建渲染器"><a href="#示例场景-vue3创建渲染器" class="headerlink" title="示例场景(vue3创建渲染器)"></a>示例场景(vue3创建渲染器)</h3><figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> renderer;</span><br><span class="line"><span class="keyword">function</span> <span class="title function_">ensureRenderer</span>(<span class="params"></span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> renderer || <span class="title function_">createRender</span>(rendererOptions);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><h3 id="其他实现方式"><a href="#其他实现方式" class="headerlink" title="其他实现方式"></a>其他实现方式</h3><p>由于 JavaScript 的事件循环机制和单线程执行，实现单例模式考虑的没那那么复杂，实现起来比较简单。</p><figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 方式一</span></span><br><span class="line"><span class="keyword">const</span> <span class="title class_">Singleton</span> = (<span class="keyword">function</span>(<span class="params"></span>) &#123;</span><br><span class="line">    <span class="keyword">let</span> instance;</span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">createInstance</span>(<span class="params"></span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Object</span>(<span class="string">&#x27;I am the instance&#x27;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">        <span class="attr">getInstance</span>: <span class="keyword">function</span>(<span class="params"></span>) &#123;</span><br><span class="line">            <span class="keyword">if</span>(!instance) &#123;</span><br><span class="line">                instance = <span class="title function_">createInstance</span>();</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> instance;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;)</span><br><span class="line"><span class="keyword">const</span> instance = <span class="title class_">Singleton</span>.<span class="title function_">getInstance</span>();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 方式二，直接使用对象字面量</span></span><br><span class="line"><span class="keyword">const</span> messageManager = &#123;</span><br><span class="line">    <span class="title function_">success</span>(<span class="params"></span>) &#123;&#125;,</span><br><span class="line">    <span class="title function_">error</span>(<span class="params"></span>) &#123;&#125;,</span><br><span class="line">&#125;</span><br><span class="line"><span class="title class_">Object</span>.<span class="title function_">freeze</span>(messageManager)</span><br></pre></td></tr></table></figure><h3 id="其他场景"><a href="#其他场景" class="headerlink" title="其他场景"></a>其他场景</h3><ul><li>全局配置：单例模式可以用于管理全局的配置信息，确保在应用中只有一个配置实例被使用。</li><li>日志记录器：单例模式可以用于创建全局唯一的日志记录器，方便在应用中统一管理和记录日志信息</li></ul><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul><li>单例模式的核心思想是需要确保一个类只有一个实例。</li></ul><h3 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h3><p>在本章中, 我们通过实际场景和案例来展示设计模式在实际项目中的应用。我们将探讨如何选择适当的设计模式来解决具体问题，并讨论设计模式的优缺点以及适用性。</p><p>通过这一系列的文章，读者将对设计模式有一个简洁而全面的了解。我们将覆盖常见的设计模式，并介绍它们的概念、应用场景和实现方式。通过学习设计模式，读者将能够更好地理解和应用设计模式，提高代码的可重用性、可维护性和灵活性。</p><p>敬请关注本系列的后续文章，希望能为您带来有价值的知识和启发。</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;单例模式是一种常见的设计模式，它通过限制类的实例化次数，确保只有一个实例存在。&lt;/p&gt;
+&lt;h3 id=&quot;示例场景-vue3创建渲染器&quot;&gt;&lt;a href=&quot;#示例场景-vue3创建渲染器&quot; class=&quot;headerlink&quot; title=&quot;示例场景(vue3创建渲染器)&quot;&gt;</summary>
+      
+    
+    
+    
+    
+  </entry>
+  
+  <entry>
     <title>渲染器：数据访问是如何被代理的？</title>
     <link href="https://sanxun8.github.io/2024/03/13/%E6%BA%90%E7%A0%81/3-%E6%B8%B2%E6%9F%93%E5%99%A8-%E6%95%B0%E6%8D%AE%E8%AE%BF%E9%97%AE%E6%98%AF%E5%A6%82%E4%BD%95%E8%A2%AB%E4%BB%A3%E7%90%86%E7%9A%84/"/>
     <id>https://sanxun8.github.io/2024/03/13/%E6%BA%90%E7%A0%81/3-%E6%B8%B2%E6%9F%93%E5%99%A8-%E6%95%B0%E6%8D%AE%E8%AE%BF%E9%97%AE%E6%98%AF%E5%A6%82%E4%BD%95%E8%A2%AB%E4%BB%A3%E7%90%86%E7%9A%84/</id>
