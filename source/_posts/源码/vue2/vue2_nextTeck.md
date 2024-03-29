@@ -1,3 +1,7 @@
+---
+title: vue2中nextTick的实现
+---
+
 ```javascript
 const inBrowser = typeof window !== 'undefined' && Object.prototype.toString.call(window) !== '[object Object]';
 const nextTick = (function () {
@@ -39,11 +43,4 @@ const nextTick = (function () {
         timeFunc(nextTickHandler, 0)
     }
 })()
-
-
-Vue.prototype._mount = function() {
-    vm._watcher = new Watcher(vm, () => {
-        vm._update(vm._render(), hydrating)
-    }, noop);
-}
 ```

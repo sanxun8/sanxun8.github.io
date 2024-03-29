@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>dom2json</title>
+</head>
+
+<body>
+    <div id="jsContainer">
+        <ul id="jsParent" class="js-test">
+            <li data-index="0">1</li>
+            <li data-index="1">2</li>
+        </ul>
+        <span style="font-weight:bold;">3</span>
+        4
+    </div>
+</body>
+
+<script>
+    window.onload = function() {
+        console.log(dom2json())
+    };
+
+    function dom2json() {
+        function emptyTextFilter(node) {
+            if(node.nodeType ===3){
+                return !!node.nodeValue.trim();
+            }
+
+            return true
+        }
+        function getNodeJson(node) {
+            let json;
+            const { nodeType, childNodes } = node
+
+            if(nodeType === 3){
+                return {
+                    tag: 'text',
+                    content: node.nodeValue.trim()
+                }
+            }
+
+            json = {
+                tag: node.nodeName.toLowerCase(),
+            }
+            if(node.attributes?.length) {
+                json.attributes = {}
+            }
+            for(let i =0, len=node.attributes.length; i < len; i++) {
+                const {name, value} = node.attributes[i];
+                json.attributes[name] = value;
+            }
+
+            if(childNodes) {
+                const filteredChildNodes = Array.from(childNodes).filter(emptyTextFilter);
+                json.children = filteredChildNodes.map(getNodeJson);
+            }
+
+            return json
+        }
+
+
+        const container = document.querySelector('#jsContainer');
+        const json = getNodeJson(container); 
+
+        return JSON.stringify(json);
+    }
+</script>
+
+</html>

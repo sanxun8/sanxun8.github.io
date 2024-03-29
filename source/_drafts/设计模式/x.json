@@ -1,0 +1,57 @@
+{
+    "tag": "div",
+    "attributes": {
+        "id": "jsContainer"
+    },
+    "children": [
+        {
+            "tag": "ul",
+            "attributes": {
+                "id": "jsParent",
+                "class": "js-test"
+            },
+            "children": [
+                {
+                    "tag": "li",
+                    "attributes": {
+                        "data-index": "0"
+                    },
+                    "children": [
+                        {
+                            "tag": "text",
+                            "content": "1"
+                        }
+                    ]
+                },
+                {
+                    "tag": "li",
+                    "attributes": {
+                        "data-index": "1"
+                    },
+                    "children": [
+                        {
+                            "tag": "text",
+                            "content": "2"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "tag": "span",
+            "attributes": {
+                "style": "font-weight:bold;"
+            },
+            "children": [
+                {
+                    "tag": "text",
+                    "content": "3"
+                }
+            ]
+        },
+        {
+            "tag": "text",
+            "content": "4"
+        }
+    ]
+}

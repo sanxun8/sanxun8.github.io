@@ -16,6 +16,22 @@
                 "<node_internals>/**"
             ],
             "type": "node"
+        },
+
+        {
+            "name": "Launch Chrome",
+            "request": "launch",
+            "type": "chrome",
+            "file": "${file}",
+        },
+        {
+            "name": "Launch Program",
+            "program": "${file}",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "node"
         }
     ]
 }
