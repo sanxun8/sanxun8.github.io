@@ -1,5 +1,5 @@
 ---
-title: vue中ref模块源码解析
+title: vue3中ref模块源码解析
 ---
 
 ### Ref
@@ -8,18 +8,19 @@ title: vue中ref模块源码解析
 export function ref(value) {
     return createRef(value, false);
 }
-
-export function shallowRef(value) {
-    return createRef(value, true);
-}
-
+```
+这个函数的核心也就是通过**createRef**把我们传入的**value**变成响应式的
+```javascript
 function createRef(rawValue, shallow) {
     if (isRef(rawValue)) {
         return rawValue;
     }
+
     return new RefImpl(rawValue, shallow);
 }
-
+```
+先经过判断，判断符合要求的**value**才能被响应式。一起来看看这个**API**的实现：
+```javascript
 class RefImpl {
     constructor(value, __v_isShallow) {
         this.__v_isShallow = __v_isShallow;
@@ -42,6 +43,19 @@ class RefImpl {
         }
     }
 }
+```
+至此，我们讲完了对ref响应式的依赖收集和触发过程, 但**trackValue**的收集依赖具体实现以及收集的依赖是如何管理的, **triggerRefValue**的触发视图更新具体实现并没有说清楚, 我们将在后续结合具体介绍
+
+### 慧眼识珠
+源码中往往包含了许多细微而重要的细节和技巧。通过学习源码，我们可以发现这些隐藏的细节，了解作者是如何处理边缘情况、优雅地解决问题以及实现功能的。这些细节和技巧对于开发者来说是宝贵的经验，能够帮助他们更好地编写可靠、高效的代码。以下是我所发现源码中的一些细节和感悟
+
+**createRef**中提供了两个参数, 分别是**value**、**isShallow**以便ref、shallowRef使用同一套逻辑
+
+```javascript
+export function shallowRef(value) {
+    return createRef(value, true);
+}
+
 ```
 
 ### 其他内容
