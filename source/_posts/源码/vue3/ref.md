@@ -1,15 +1,36 @@
 ---
-title: vue3中ref模块源码解析
+title: 响应式原理：ref对象的响应式解析
 ---
 
+### 前言
+
+由于vue中的响应式都是基于**ReactiveEffect**实现的的，**effect**为其使用之一。本小节基于**effect**理解**ref**对象的响应过程。若你想了解**effect**，你可以查看我往期的文章。
+
+```javascript
+const isLike = ref(true);
+effect(() => {
+    console.log(isLike.value)
+});
+
+setTimeout(() => {
+    isLike.value = false;
+}, 1000)
+```
+
+**effect**默认会调用回调函数，当访问了**isLike.value**, 会执行**trackRefValue**收集依赖，当给**isLike.value**重新赋值后，会执行**triggerRefValue**触发响应。而**trackRefValue、triggerRefValue**在源码中是如何调用的、做了哪些事情，跟着我的步伐，你将会得到答案。
+
 ### Ref
+
 源码中关于**ref**部分的定义：
+
 ```javascript
 export function ref(value) {
     return createRef(value, false);
 }
 ```
+
 这个函数的核心也就是通过**createRef**把我们传入的**value**变成响应式的
+
 ```javascript
 function createRef(rawValue, shallow) {
     if (isRef(rawValue)) {
@@ -19,7 +40,9 @@ function createRef(rawValue, shallow) {
     return new RefImpl(rawValue, shallow);
 }
 ```
+
 先经过判断，判断符合要求的**value**才能被响应式。一起来看看这个**API**的实现：
+
 ```javascript
 class RefImpl {
     constructor(value, __v_isShallow) {
@@ -44,133 +67,58 @@ class RefImpl {
     }
 }
 ```
-至此，我们讲完了对ref响应式的依赖收集和触发过程, 但**trackValue**的收集依赖具体实现以及收集的依赖是如何管理的, **triggerRefValue**的触发视图更新具体实现并没有说清楚, 我们将在后续结合具体介绍
 
-### 慧眼识珠
-源码中往往包含了许多细微而重要的细节和技巧。通过学习源码，我们可以发现这些隐藏的细节，了解作者是如何处理边缘情况、优雅地解决问题以及实现功能的。这些细节和技巧对于开发者来说是宝贵的经验，能够帮助他们更好地编写可靠、高效的代码。以下是我所发现源码中的一些细节和感悟
-
-**createRef**中提供了两个参数, 分别是**value**、**isShallow**以便ref、shallowRef使用同一套逻辑
+当调用**value getter**时，会调用**trackRefValue**收集依赖，让我们看一下**trackRefValue**的实现
 
 ```javascript
-export function shallowRef(value) {
-    return createRef(value, true);
+export function trackRefValue(ref) {
+    if (shouldTrack && activeEffect) {
+        ref = toRaw(ref);
+        ref.dep ??= createDep(() => (ref.dep = undefined), ref instanceof ComputedRefImpl ? ref : undefined);
+        trackEffect(activeEffect, ref.dep);
+    }
 }
-
 ```
 
-### 其他内容
+trackRefValue会给ref增加依赖dep属性存储副作用函数
 
 ```javascript
-
-function isRef(r) {
-    return !!(r && r.__v_isRef === true);
+export const createDep = (cleanup, computed) => {
+    const dep = new Map();
+    dep.cleanup = cleanup;
+    dep.computed = computed;
+    return dep;
 }
 
-
-export function unref(ref) {
-    return isRef(ref) ? ref.value : ref;
-}
-
-export function toValue(source) {
-    return isFunction(source) ? source() : unref(source);
-}
-
-const shallowUnwrapHandlers = {
-    get: (target, key, receiver) => unref(Reflect.get(target, key, receiver)),
-    set: (target, key, value, receiver) => {
-        const oldValue = target[key];
-        if (isRef(oldValue) && !isRef(value)) {
-            oldValue.value = value;
-            return true;
-        } else {
-            return Reflect.set(target, key, value, receiver);
-        }
-    },
-}
-
-export function proxyRefs(objectWithRefs) { // 不太理解依赖收集
-    return isReactive(objectWithRefs) ? objectWithRefs : new Proxy(objectWithRefs, shallowUnwrapHandlers);
-}
-
-
-class CustomRefImpl {
-    constructor(factory) {
-        const { get, set } = factory(() => trackRefValue(this), () => triggerRefValue(this));
-        this._get = get;
-        this._set = set;
-    }
-
-    get value() {
-        return this._get();
-    }
-
-    set value(newVal) {
-        this._set(newVal);
-    }
-}
-
-
-export function customRef(factory) {
-    return new CustomRefImpl(factory);
-}
-
-export function toRefs(object) {
-    if (__DEV__ && !isProxy(object)) {
-        warn(`toRefs() expects a reactive object but received a plain one.`);
-    }
-    const ret = isArray(object) ? new Array(object.length) : {};
-    for (const key in object) {
-        ret[key] = propertyToRef(object, key)
-    }
-    return ret
-}
-
-class ObjectRefImpl {
-    constructor(_object, _key, _defaultValue) {
-        this._object = _object;
-        this._key = _key;
-        this._defaultValue = _defaultValue;
-    }
-
-    get value() {
-        const val = this._object[this._key];
-        return val === undefined ? this._defaultValue : val;
-    }
-
-    set value(newVal) {
-        this._object[this._key] = newVal;
-    }
-
-    get dep() {
-        return getDepFromReactive(toRaw(this._object), this._key)
-    }
-}
-
-class GetterRefImpl {
-    constructor(_getter) {
-        this._getter = _getter;
-        this.__v_isRef = true;
-        this.__v_isReadonly = true;
-    }
-    get value() {
-        return this._getter();
-    }
-}
-
-export function toRef(source, key, defaultValue) {
-    if (isRef(source)) {
-        return source;
-    } else if (isFunction(source)) { // 不太理解依赖收集
-        return new GetterRefImpl(source);
-    } else if (isObject(source) && arguments.length > 1) { // 不太理解依赖搜集
-        return propertyToRef(source, key, defaultValue);
-    } else {
-        return ref(source);
-    }
-}
-
-function propertyToRef(source, key, defaultValue) {
-    const val = source[key];
-    return isRef(val) ? val : new ObjectRefImpl(source, key, defaultValue);
+export function trackEffect(effect, dep, debuggerEventExtraInfo) {
+    // 待完善
+    // 设置依赖标识
 }
 ```
+
+当调用**value setter**时，会调用**triggerRefValue**触发更新，让我们看一下**triggerRefValue**的实现
+
+```javascript
+export function triggerRefValue(ref, dirtyLevel, newValue) {
+    ref = toRaw(ref);
+    const dep = ref.dep;
+    if (dep) {
+        triggerEffects(dep, dirtyLevel);
+    }
+}
+```
+
+其核心就是调用用**triggerEffects**触发副作用函数执行
+
+```javascript
+export function triggerEffects(dep, dirtyLevel, debuggerEventExtraInfo) {
+    // 待完善
+    // 暂停调度
+    // 遍历依赖，执行副作用函数
+    // 重置调度
+}
+```
+
+### 总结
+
+至此，我们讲完了对**ref**对象响应式的依赖收集和触发过程。
