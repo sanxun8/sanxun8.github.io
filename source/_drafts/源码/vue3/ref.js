@@ -11,6 +11,14 @@ function createRef(rawValue, shallow) {
     return new RefImpl(rawValue, shallow);
 }
 
+export function triggerRefValue(ref, dirtyLevel, newValue) {
+    ref = toRaw(ref);
+    const dep = ref.dep;
+    if (dep) {
+        triggerEffects(dep, dirtyLevel);
+    }
+}
+
 class RefImpl {
     constructor(value, __v_isShallow) {
         this.__v_isShallow = __v_isShallow;

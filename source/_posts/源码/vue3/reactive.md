@@ -1,25 +1,8 @@
 ---
-title: 响应式原理：reactive对象的响应式解析
+title: 响应式原理：reactive对象解析
 ---
 
-### 前言
-
-由于vue中的响应式都是基于**ReactiveEffect**实现的的，**effect**为其使用之一。本小节基于**effect**理解**ref**对象的响应过程。若你想了解**effect**，你可以查看我往期的文章。
-
-```javascript
-const user = reactive({
-    name: 'jack'
-});
-effect(() => {
-    console.log(user.name)
-});
-
-setTimeout(() => {
-    user.name = 'tom';
-}, 1000)
-```
-
-### Reactive
+### reactive
 
 源码中关于**Reactive**部分的定义：
 
@@ -246,52 +229,7 @@ function createArrayInstrumentations() {
 
 另一类是修改类函数：**push**、**pop**、**shift**、**unshift**、**splice**，代表对数组的修改操作，在这些函数中暂停了全局的追踪功能，防止某些情况下导致死循环。
 
-再回过来看**get api**，接下来的操作就是通过**track(target, TrackOpTypes.Get, key)**进行依赖收集，我们再来一起看一下**track**的实现：
-
-```javascript
-let shouldTrack = true;
-let activeEffect; // ReactiveEffect实例
-
-const targetMap = new WeakMap();
-export function track(target, type, key) {
-    if (shouldTrack && activeEffect) {
-        let depsMap = targetMap.get(target);
-
-        // 初始化依赖映射
-        if (!depsMap) {
-            targetMap.set(target, (depsMap = new Map()));
-        }
-
-        let dep = depsMap.get(key);
-        // 设置依赖
-        if (!dep) {
-            depsMap.set(key, (dep = createDep(() => depsMap.delete(key))));
-        }
-
-        // 收集副作用
-        trackEffect(activeEffect, dep);
-    }
-}
-
-export function trackEffect(effect, dep, debuggerEventEXtraInfo) {
-    // 待完善
-    // 设置依赖标识
-
-    // 清除依赖副作用
-
-    // 调用收集回调
-
-    if (dep.get(effect) !== effect._trackId) {
-        dep.set(effect, effect._trackId);
-    }
-} 
-```
-
-上面函数有点绕，其实核心就是在生成一个数据结构，什么样的数据结构呢？我们来画个图看看：
-
-![Imgur](https://i.imgur.com/X7hex8a.png)
-
-我们创建了全局的**targetMap**，它的键是**target**，值是**depsMap**；这个**depsMap**的键是**target**的**key**，值是**dep**集合，**dep**集合中存储的是依赖的副作用函数**effect**。
+如果你想了解**track**做了些什么，可以查看我的文章[响应式原理：dep（响应式对象的依赖管理器）]
 
 #### set
 
@@ -349,93 +287,4 @@ class MutableReactiveHandler extends BaseReactiveHandler {
 
 可以看到**set**接口核心逻辑就是根据是否为渐层响应式来确认原始值和新值，这里默认不是浅层的响应式，所以会先把原始值和新值进行**toRaw**转换，然后通过**Reflect.set**设置值，最后通过**trigger**函数派发通知，并依据**key**是否存在于**target**来确认通知类型是**add**（新增）还是**set**（修改）。
 
-接下来核心就是**trigger**的逻辑，是如何实现触发响应的：
-
-
-```javascript
-export function trigger(target, type, key, newValue, oldValue, oldTarget) {
-    const depsMap = targetMap.get(target);
-
-    // 处理未收集
-    if (!depsMap) {
-        return
-    }
-
-    let deps = []; // 需要被处理依赖
-    if (type === TriggerOpTypes.CLEAR) { // 操作为清理 
-        deps = [...depsMap.values()];
-    } else if (key === 'length' && isArray(target)) {
-        const newLength = Number(newValue);
-        depsMap.forEach((dep, key) => {
-            if (key === 'length' || (!isSymbol(key) && key >= newLength)) {
-                deps.push(dep);
-            }
-        });
-    } else {
-        if (key !== void 0) {
-            deps.push(depsMap.get(key));
-        }
-
-        switch (type) {
-            case TriggerOpTypes.ADD:
-                if (!isArray(target)) {
-                    deps.push(depsMap.get(ITERACE_KEY)); // 暂不理解
-                    if (isMap(target)) {
-                        deps.push(depsMap.get(MAP_KEY_ITERATE_KEY)); // 暂不理解
-                    }
-                } else if (isIntegerKey(key)) {
-                    deps.push(depsMap.get('length')); // // 暂不理解
-                }
-
-                break;
-            case TriggerOpTypes.DELETE:
-                if ((!isArray(target))) {
-                    deps.push(depsMap.get(ITERACE_KEY)); // 暂不理解
-                    if (isMap(target)) {
-                        deps.push(depsMap.get(MAP_KEY_ITERATE_KEY)); // 暂不理解
-                    }
-                }
-
-                break;
-            case TriggerOptypes.SET:
-                if (isMap(target)) {
-                    deps.push(depsMap.get(ITERACE_KEY)); // 暂不理解
-                }
-        }
-    }
-
-    // 暂停调度
-    pauseScheduling();
-
-    // 遍历依赖，执行副作用
-    for (const dep of deps) {
-        if (dep) {
-            triggerEffects(dep, DirtyLevels.Dirty)
-        }
-    }
-
-    // 重置调调
-    resetScheduling();
-}
-
-export function trackEffect(effect, dep, debuggerEventEXtraInfo) {
-    // 待完善
-    
-    // 设置依赖标识
-
-    // 清除依赖副作用
-
-    // 调用收集回调
-
-    if (dep.get(effect) !== effect._trackId) {
-        dep.set(effect, effect._trackId);
-    }
-} 
-```
-
-上述代码的核心流程就是获取需要响应的依赖，首先是响应操作类型为清理时，所有依赖都需要被清理，其次修改**length**属性且**target**为数组时，访问**length**属性的依赖以及数组中超过新数组长度的元素依赖需要被清理。获取需要响应的依赖后，暂停全局调度后，遍历执行其副作用函数，最后重置调度。
-
-
-### 总结
-
-至此，我们讲完了对**reactive**对象响应式的依赖收集和触发过程。
+如果你想了解**trigger**做了些什么，可以查看我的文章[响应式原理：dep（响应式对象的依赖管理器）]

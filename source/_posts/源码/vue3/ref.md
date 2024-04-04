@@ -1,23 +1,6 @@
 ---
-title: 响应式原理：ref对象的响应式解析
+title: 响应式原理：响应式队形解析
 ---
-
-### 前言
-
-由于vue中的响应式都是基于**ReactiveEffect**实现的的，**effect**为其使用之一。本小节基于**effect**理解**ref**对象的响应过程。若你想了解**effect**，你可以查看我往期的文章。
-
-```javascript
-const isLike = ref(true);
-effect(() => {
-    console.log(isLike.value)
-});
-
-setTimeout(() => {
-    isLike.value = false;
-}, 1000)
-```
-
-**effect**默认会调用回调函数，当访问了**isLike.value**, 会执行**trackRefValue**收集依赖，当给**isLike.value**重新赋值后，会执行**triggerRefValue**触发响应。而**trackRefValue、triggerRefValue**在源码中是如何调用的、做了哪些事情，跟着我的步伐，你将会得到答案。
 
 ### Ref
 
@@ -62,63 +45,11 @@ class RefImpl {
         if (hasChanged(newVal, this._rawValue)) {
             this._rawValue = newVal;
             this._value = useDirectValue ? newVal : toReactive(newVal);
-            triggerRefValue(this, DirtyLevels.Dirty, newVal); // 触发相应
+            triggerRefValue(this, DirtyLevels.Dirty, newVal); // 触发响应
         }
     }
 }
 ```
 
-当调用**value getter**时，会调用**trackRefValue**收集依赖，让我们看一下**trackRefValue**的实现
+可以发现，**RefImpl**定义了**value gettter**用于依赖的收集，定义了**value setter**用于触发响应。如果你想了解**trackRefValue**、**triggerRefValue**做了些什么，可以查看我的文章[响应式原理：dep（响应式对象的依赖管理器）]
 
-```javascript
-export function trackRefValue(ref) {
-    if (shouldTrack && activeEffect) {
-        ref = toRaw(ref);
-        ref.dep ??= createDep(() => (ref.dep = undefined), ref instanceof ComputedRefImpl ? ref : undefined);
-        trackEffect(activeEffect, ref.dep);
-    }
-}
-```
-
-trackRefValue会给ref增加依赖dep属性存储副作用函数
-
-```javascript
-export const createDep = (cleanup, computed) => {
-    const dep = new Map();
-    dep.cleanup = cleanup;
-    dep.computed = computed;
-    return dep;
-}
-
-export function trackEffect(effect, dep, debuggerEventExtraInfo) {
-    // 待完善
-    // 设置依赖标识
-}
-```
-
-当调用**value setter**时，会调用**triggerRefValue**触发更新，让我们看一下**triggerRefValue**的实现
-
-```javascript
-export function triggerRefValue(ref, dirtyLevel, newValue) {
-    ref = toRaw(ref);
-    const dep = ref.dep;
-    if (dep) {
-        triggerEffects(dep, dirtyLevel);
-    }
-}
-```
-
-其核心就是调用用**triggerEffects**触发副作用函数执行
-
-```javascript
-export function triggerEffects(dep, dirtyLevel, debuggerEventExtraInfo) {
-    // 待完善
-    // 暂停调度
-    // 遍历依赖，执行副作用函数
-    // 重置调度
-}
-```
-
-### 总结
-
-至此，我们讲完了对**ref**对象响应式的依赖收集和触发过程。
