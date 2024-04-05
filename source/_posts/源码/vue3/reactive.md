@@ -172,7 +172,7 @@ class BaseReactiveHandler {
             return res;
         }
 
-        if (isRef(res)) { // 不太清楚
+        if (isRef(res)) {
             return targetIsArray && isIntegerKey(key) ? res : res.value;
         }
 
@@ -186,7 +186,7 @@ class BaseReactiveHandler {
 ```
 **get api**核心流程就是首先经过一系列判断, 判断符合要求的**key**才进行依赖收集, 然后根据对不同的类型进行处理返回。不收集依赖的key包括预设属性、symbol类型的自有属性。
 
-当我们的**target**是数组，且**key**值存在**arraInstrumentations**中时，返回**arraInstrumentations**中对应的**key**值。我们再来看看**arraInstrumentations**是个什么：
+当我们的**target**是数组，且**key**值存在**arrayInstrumentations**中时，返回**arrayInstrumentations**中对应的**key**值。我们再来看看**arrayInstrumentations**是个什么：
 
 ```javascript
 const arrayInstrumentations = createArrayInstrumentations()
@@ -229,7 +229,7 @@ function createArrayInstrumentations() {
 
 另一类是修改类函数：**push**、**pop**、**shift**、**unshift**、**splice**，代表对数组的修改操作，在这些函数中暂停了全局的追踪功能，防止某些情况下导致死循环。
 
-如果你想了解**track**做了些什么，可以查看我的文章[响应式原理：dep（响应式对象的依赖管理器）]
+如果你想了解**track**做了些什么，可以查看我的文章[响应式原理：dep（响应式对象的依赖管理器）](https://sanxun8.github.io/2024/04/03/%E6%BA%90%E7%A0%81/vue3/dep/)
 
 #### set
 

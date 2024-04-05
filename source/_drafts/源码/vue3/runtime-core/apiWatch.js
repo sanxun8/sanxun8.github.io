@@ -205,3 +205,7 @@ export function traverse(value, depth, currentDepth = 0, seen) {
 
     return value;
 }
+
+export function watchEffect(effect, options) {
+    return doWatch(effect, null, options);
+}

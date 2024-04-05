@@ -1,20 +1,14 @@
-function reactive(target) {
-    return new Proxy(target, {
-        get(target, key, receiver) {
-            console.log('get', key);
-            return Reflect.get(target, key, receiver);
-        },
-        set(target, key, value, receiver) {
-            console.log('set', key, value);
-            return Reflect.set(target, key, value, receiver);
-        },
-        ownKeys(target) {
-            return Reflect.ownKeys(target);
-        }
-    });
+const isIntegerKey = (key) => {
+    const _isString = isString(key);
+    const isNaN = key !== 'NaN';
+    const firsChar = key[0];
+    const num = parseInt(key, 10);
+    return '' + num === key;
 }
 
-const user = reactive({age: 18});
+function isString(val) {
+    return typeof val === 'string'
+}
 
-const items = reactive([]);
-items.map(item => item);
+
+isIntegerKey('1')

@@ -2,7 +2,7 @@
 title: vue3中computed模块源码解析
 ---
 
-### Computed
+### computed
 
 源码中关于**computed**部分的定义：
 

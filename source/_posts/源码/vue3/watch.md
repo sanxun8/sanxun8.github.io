@@ -286,3 +286,14 @@ if (cb) {
 }
 ```
 
+到这里**doWatch**流程就已经走完，我们对知识做个扩展，了解一下**watchEffect**是如何实现的
+
+### watchEffect
+
+```javascript
+export function watchEffect(effect, options) {
+    return doWatch(effect, null, options);
+}
+```
+
+可以发现，**watchEffect**实际上也是**doWatch**一种使用形式，传入**source**的值为函数，不传**cb**函数

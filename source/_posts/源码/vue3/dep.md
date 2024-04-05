@@ -18,11 +18,11 @@ export const createDep = (cleanup, computed) => {
 
 不同的响应式对象会创建用于存储**dep**的不同的数据结构，并使用**dep**进行通知函数执行，我们先来看一下**reactive**对象的dep结构创建以及函数调用通知过程。
 
-### ref
+### reactive
 
 #### 依赖收集（对象构建）
 
-让我看一下**ref**创建用于存储**dep**的不同的数据结构的流程。
+让我看一下**reactive**创建用于存储**dep**的不同的数据结构的流程。
 
 
 ```javascript

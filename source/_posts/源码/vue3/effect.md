@@ -85,9 +85,13 @@ function cleanupDepEffect(dep, effect) {
 }
 ```
 
+我们简单梳理一下**ReactiveEffect**实例接口调用逻辑，当我们调用**ReactiveEffect.run**会运行**fn**触发依赖收集，当响应式数据变化后会通知**ReactiveEffect.trgger**和**ReactiveEffect。shcedule**执行，具体依赖通知可以查看我的文章: [响应式原理：dep（响应式对象的依赖管理器）](https://sanxun8.github.io/2024/04/03/%E6%BA%90%E7%A0%81/vue3/dep/)。
 
+我们知道当我们对一个响应式数据进行访问时，会触发响应式依赖收集，**ReactiveEffect.run**就是调用**ReactiveEffect.fn**达到依赖收集效果，但**ReactiveEffect.run**首次是在在哪里调用，以及后续响应式更新如何调用**ReactiveEffect.run**。带着这两个问题，我们来理解一下**effect**、**computed**、**doWatch**、**setupRenderEffect**对**ReactiveEffect**的使用情况。
 
 ### effect
+
+有了以上知识，我们了解一下**effect**函数是如何调用**ReactiveEffect.run**触发依赖收集，当依赖变化后又做了哪些事情
 
 ```javascript
 export function effect(fn, options) {
@@ -120,11 +124,32 @@ export function effect(fn, options) {
 }
 ```
 
-**effect**通过传入一个调度器执行fn
+**effect**首先处理**fn**为副作用函数时，指向回原函数，然后构建一个**ReactiveEffect**实例，通过传入一个**schedule**函数达到从新执行**fn**效果。然后就是**options**逻辑的处理。当我们不传options时，默认执行**ReactiveEffect.run**达到依赖收集效果，函数返回**ReactiveEffect.run**函数，可以根据业务自由调用。
 
 ### ComputedRefImpl
 
+有些同学可能不了解**ComputedRefImpl**是个什么，**ComputedRefIml**实际时**computed**对象的构造器的，我们接着来了解一个**ComputedRefImpl**是如何调用**ReactiveEffect.run**触发依赖收集的。
+
 ```javascript
+
+export function computed(getterOptions, debugOptions, isSSR = false) {
+    let getter;
+    let setter;
+
+    const onlyGetter = isFunction(getterOptions);
+
+    if (onlyGetter) {
+        getter = getterOptions;
+    } else {
+        getter = getterOptions.get;
+        setter = getterOptions.set;
+    }
+
+    const cRef = new ComputedRefImpl(getter, setter, onlyGetter || !setter, isSSR);
+
+    return cRef;
+}
+
 export class ComputedRefImpl {
     constructor(getter, _setter, isReadonly, isSSR) {
         // 实例化副作用
@@ -148,19 +173,55 @@ export class ComputedRefImpl {
 }
 ```
 
-**ComputedRefImpl.value getter**执行**effect.run**后，执行**computed.value getter**触发响应式依赖收集，响应式变量更新后执行**computed effect**响应
+可以发现，当我们**ComputedRefImpl.value getter**访问时，会触发**ReactiveEffect.run**从而调用**computed.value getter**触发依赖收集
 
 ### doWatch
+
+如果你还不了解**doWatch**是个什么，你可以查看一下我的文章：[响应式原理：Watch 函数的实现](https://sanxun8.github.io/2024/04/03/%E6%BA%90%E7%A0%81/vue3/watch/)
+
+
 ```javascript
-const effect = new ReactiveEffect(getter, NOOP, scheduler)
+export function doWatch(source, cb, { immediate, deep, flush, once, onTrack, onTrigger } = EMPTY_OBJ) {
+    // ...
+
+    const job = () => {
+        effect.run();
+    }
+
+    const effect = new ReactiveEffect(getter, NOOP, scheduler);
+
+    effect.run()
+}
 ```
 
+这里对**doWatch**的实现代码进行大量缩减。从上述代码以及前面对**ReactiveEffect**认识，我们可以发现，**doWatch**实际上定义了个**getter**函数对响应式依赖进行收集。这里不对**scheduler**定义进行展开，你可以简单理解为scheduler实际就是执行**job**函数，从而达到执行**getter**效果，而**ReactiveEffect.run**的首次调用是在**doWatch**内部执行的。
+
 ### setupRenderEffect
+
+setupRenderEffect是组件更新的核心
+
 ```javascript
-const effect = (instance.effect = new ReactiveEffect(
-      componentUpdateFn,
-      NOOP,
-      () => queueJob(update),
-      instance.scope, // track it in component's effect scope
-    ))
+
+function baseCreateRenderer(options, createHydrationFns) {
+  const setupRenderEffect = (
+    instance,
+    initialVNode,
+    container,
+    anchor,
+    parentSuspense,
+    namspace,
+    optimized,
+  ) => {
+    const effect = new ReactiveEffect(componentUpdateFn, NOOP, () => queueJob(update), instance.scope);
+
+    const update = () => {
+        if (effect.dirty) {
+            effect.run();
+        }
+    }
+    update();
+  }
+}
 ```
+
+我们知道组件编译后会编译成**render**函数，这里我们可以理解**componentUpdateFn**实际就是调用组件**render**达到响应式数据依赖收集的效果，而传输的**scheduler**调度器就简单理解成对**update**函数的调用，而**ReactiveEffect.run**的首次调用也是在**setupRenderEffect**调用的。

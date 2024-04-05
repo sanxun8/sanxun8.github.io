@@ -1,5 +1,5 @@
 ---
-title: 响应式原理：响应式队形解析
+title: 响应式原理：ref对象解析
 ---
 
 ### Ref
@@ -51,5 +51,5 @@ class RefImpl {
 }
 ```
 
-可以发现，**RefImpl**定义了**value gettter**用于依赖的收集，定义了**value setter**用于触发响应。如果你想了解**trackRefValue**、**triggerRefValue**做了些什么，可以查看我的文章[响应式原理：dep（响应式对象的依赖管理器）]
+可以发现，**RefImpl**定义了**value gettter**用于依赖的收集，定义了**value setter**用于触发响应。如果你想了解**trackRefValue**、**triggerRefValue**做了些什么，可以查看我的文章[响应式原理：dep（响应式对象的依赖管理器）](https://sanxun8.github.io/2024/04/03/%E6%BA%90%E7%A0%81/vue3/dep/)
 
