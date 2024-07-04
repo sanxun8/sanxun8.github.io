@@ -1,0 +1,31 @@
+{
+    "keywords": [
+        "开源"
+    ],
+    "searchTypes": [
+        {
+            "demo": "in:name 项目名称",
+            "description": "过滤项目名称"
+        },
+        {
+            "demo": "stars:>数量",
+            "description": "过滤点赞总数"
+        },
+        {
+            "demo": "in:readme 描述",
+            "description": "过滤描述文件内容"
+        },
+        {
+            "demo": "in:description 描述",
+            "description": "过滤项目描述内容"
+        },
+        {
+            "demo": "language:语言",
+            "description": "过滤项目语言"
+        },
+        {
+            "demo": "pushed:>2019-09-03",
+            "description": "过滤最近推送时间"
+        }
+    ]
+}
