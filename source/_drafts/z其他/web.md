@@ -33,7 +33,8 @@
 [](https://www.rakuten.co.jp/)
 [](https://www.amazon.com/)
 [](https://hzpba.nmpa.gov.cn/gccx/)
-[](https://developer.mozilla.org/)
+[](https://developer.mozilla.or
+g/)
 [](https://www.mingdao.com/)
 [](https://picsum.photos)
 [](https://docschina.org/)
