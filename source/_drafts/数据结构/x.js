@@ -1,7 +1,9 @@
-function fbi(number) {
-  if (number < 2) {
-    return number === 0 ? 0 : 1;
-  }
+var i;
+var sum = 0;
+var n = 100; // 定义执行 1 次
 
-  return fbi(i - 1) + fbi(i - 2);
+for (i = 1; i <= n; i++) { // 累加 n + 1 次 
+  sum += i; // 循环 n 次
 }
+
+console.log(sum);
