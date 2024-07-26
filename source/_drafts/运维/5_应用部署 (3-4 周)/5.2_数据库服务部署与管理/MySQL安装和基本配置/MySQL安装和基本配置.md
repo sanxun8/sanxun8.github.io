@@ -42,7 +42,7 @@ default-character-set = utf8mb4
 mysqld --defaults-file="D:\software\mysql-5.7.44-winx64\my.ini" --initialize-insecure
 ```
 
-使用如下命令将 MySQL 添加为 Windows 服，服务名称可以自定义
+使用如下命令将 MySQL 添加为 Windows 服务，服务名称可以自定义
 
 ```shell
 mysqld --install "MySQL57"
