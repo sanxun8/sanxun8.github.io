@@ -1,5 +1,5 @@
 ---
-title: accepts
+title: accepts 内容协商工具
 ---
 
 accepts 是一个用于处理 HTTP 请求中 Accept 头的 Node.js 模块。它可以帮助你根据客户端的请求头确定响应的内容类型、语言、字符集和编码。以下是如何使用 accepts 模块的指南。
