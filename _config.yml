@@ -1,0 +1,62 @@
+# Site
+title: 屯货三旬的个人网站
+description: 屯货三旬的个人网站
+author: 屯货三旬
+year: 2023
+language: zh-CN
+
+# URL
+url: https://sanxun8.github.io
+root: /
+
+# Directory
+source_dir: source
+public_dir: docs # 方便使用Github Page
+tag_dir: tags
+archive_dir: archives
+category_dir: categories
+code_dir: code # markdown使用include_code标签
+skip_render:
+  - "code/*.*" # 排除code_dir
+  - "extension/**/*.html" # 排除extension
+  - "*.html" # 如果在在主目录source文件夹里放了搜索引擎验证的.html文件
+  - "CNAME" # 如果在在主目录source文件夹里放了CNAME文件
+
+# Writing
+new_post_name: :title.md # File name of new posts
+default_layout: post
+titlecase: true # Transform title into titlecase
+external_link:
+  enable: false # Open external links in new tab
+  field: site # site/post
+  exclude: ""
+filename_case: 0 # 0: / 1: 把文件名称转换为小写 / 2: 把文件名称转换为大写 
+render_drafts: false
+post_asset_folder: true
+relative_link: false
+future: true
+highlight:
+  enable: true
+  line_number: false
+  auto_detect: false
+  tab_replace: "  "
+  wrap: true
+  hljs: false
+
+# Date / Time format
+date_format: YYYY-MM-DD
+time_format: HH:mm:ss
+## Use post's date for updated date unless set in front-matter
+updated_option: true
+
+# Extensions
+## Plugins: https://hexo.io/plugins/
+theme: butterfly
+
+# Deployment
+## Docs: https://hexo.io/docs/deployment.html
+# deploy:
+#   - type: git
+#     repo: git@github.com:sanxun8/sanxun8.github.io.git
+
+ignore:

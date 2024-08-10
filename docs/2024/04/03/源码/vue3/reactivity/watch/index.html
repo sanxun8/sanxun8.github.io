@@ -1,0 +1,359 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>响应式原理：Watch函数的实现 | 屯货三旬的个人网站</title><meta name="author" content="屯货三旬"><meta name="copyright" content="屯货三旬"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="参数归一化我们知道watch的source参数接受类型有ref, computed, reactive, gertter或者组合成数组类型 export function watch(source, cb, options) &amp;#123;    return dowatch(source, cb, options);&amp;#125;export function doWatch(source, cb,">
+<meta property="og:type" content="article">
+<meta property="og:title" content="响应式原理：Watch函数的实现">
+<meta property="og:url" content="https://sanxun8.github.io/2024/04/03/%E6%BA%90%E7%A0%81/vue3/reactivity/watch/index.html">
+<meta property="og:site_name" content="屯货三旬的个人网站">
+<meta property="og:description" content="参数归一化我们知道watch的source参数接受类型有ref, computed, reactive, gertter或者组合成数组类型 export function watch(source, cb, options) &amp;#123;    return dowatch(source, cb, options);&amp;#125;export function doWatch(source, cb,">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://sanxun8.github.io/img/up.jpg">
+<meta property="article:published_time" content="2024-04-03T14:11:14.651Z">
+<meta property="article:modified_time" content="2024-04-05T13:41:38.014Z">
+<meta property="article:author" content="屯货三旬">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://sanxun8.github.io/img/up.jpg"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://sanxun8.github.io/2024/04/03/%E6%BA%90%E7%A0%81/vue3/reactivity/watch/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: {"defaultEncoding":1,"translateDelay":0,"msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"簡"},
+  noticeOutdate: {"limitDay":500,"position":"top","messagePrev":"这篇文章","messageNext":"距上次更新已有几天，文章内容可能已过时。"},
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":false,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '天',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: {"limitCount":50,"languages":{"author":"作者: 屯货三旬","link":"链接: ","source":"来源: 屯货三旬的个人网站","info":"著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。"}},
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体中文","cht_to_chs":"你已切换为简体中文","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"bottom-left"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '响应式原理：Watch函数的实现',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-04-05 21:41:38'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 6.3.0"><link rel="alternate" href="/atom.xml" title="屯货三旬的个人网站" type="application/atom+xml">
+</head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+  window.addEventListener('load',() => { preloader.endLoading() })
+
+  if (true) {
+    document.addEventListener('pjax:send', () => { preloader.initLoading() })
+    document.addEventListener('pjax:complete', () => { preloader.endLoading() })
+  }
+})()</script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/img/up.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">18</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fa-fw fa fa-heartbeat"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/photo/"><i class="fa-fw fa-fw fas fa-images"></i><span> 图库</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/messageboard"><i class="fa-fw fa-fw fas fa-comment-dots"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background: #f0bc6c"><nav id="nav"><span id="blog-info"><a href="/" title="屯货三旬的个人网站"><span class="site-name">屯货三旬的个人网站</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fa-fw fa fa-heartbeat"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/photo/"><i class="fa-fw fa-fw fas fa-images"></i><span> 图库</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/messageboard"><i class="fa-fw fa-fw fas fa-comment-dots"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">响应式原理：Watch函数的实现</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-04-03T14:11:14.651Z" title="发表于 2024-04-03 22:11:14">2024-04-03</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-04-05T13:41:38.014Z" title="更新于 2024-04-05 21:41:38">2024-04-05</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">1.2k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>5分钟</span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h3 id="参数归一化"><a href="#参数归一化" class="headerlink" title="参数归一化"></a>参数归一化</h3><p>我们知道<strong>watch</strong>的<strong>source</strong>参数接受类型有<strong>ref</strong>, <strong>computed</strong>, <strong>reactive</strong>, <strong>gertter</strong>或者组合成数组类型</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">watch</span>(<span class="params">source, cb, options</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_">dowatch</span>(source, cb, options);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">doWatch</span>(<span class="params">source, cb, &#123; immediate, deep, flush, once, onTrack, onTrigger &#125; = EMPTY_OBJ</span>) &#123;</span><br><span class="line">    <span class="keyword">const</span> <span class="title function_">warnInvalidSource</span> = (<span class="params">s</span>) =&gt; &#123;</span><br><span class="line">        <span class="comment">// 一些警告</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">const</span> instance = currentInstance;</span><br><span class="line">    <span class="keyword">const</span> <span class="title function_">reactiveGetter</span> = source =&gt;</span><br><span class="line">        deep === <span class="literal">true</span> ? source : <span class="title function_">traverse</span>(source, deep === <span class="literal">false</span> ? <span class="number">1</span> : <span class="literal">undefined</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> getter;</span><br><span class="line">    <span class="keyword">let</span> forceTrigger = <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">let</span> isMultiSource = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 参数归一化</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="title function_">isRef</span>(source)) &#123;</span><br><span class="line">        getter = <span class="function">() =&gt;</span> source.<span class="property">value</span>;</span><br><span class="line">        forceTrigger = <span class="title function_">isShallow</span>(source);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="title function_">isReactive</span>(source)) &#123;</span><br><span class="line">        getter = <span class="function">() =&gt;</span> <span class="title function_">reactiveGetter</span>(source);</span><br><span class="line">        forceTrigger = <span class="literal">true</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="title function_">isArray</span>(source)) &#123;</span><br><span class="line">        isMultiSource = <span class="literal">true</span>;</span><br><span class="line">        forceTrigger = source.<span class="title function_">some</span>(<span class="function"><span class="params">s</span> =&gt;</span> <span class="title function_">isReactive</span>(s) || <span class="title function_">isShallow</span>(s));</span><br><span class="line">        getter = <span class="function">() =&gt;</span> source.<span class="title function_">map</span>(<span class="function"><span class="params">s</span> =&gt;</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (<span class="title function_">isRef</span>(s)) &#123;</span><br><span class="line">                <span class="keyword">return</span> s.<span class="property">value</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="title function_">isReactive</span>(s)) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="title function_">reactiveGetter</span>(s);</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="title function_">isFunction</span>(s)) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="title function_">callWithErrorHandling</span>(s, instance, <span class="title class_">ErrorCodes</span>.<span class="property">WATCH_GETTER</span>);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="title function_">warnInvalidSource</span>(s);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="title function_">isFunction</span>(source)) &#123;</span><br><span class="line">        <span class="keyword">if</span> (cb) &#123;</span><br><span class="line">            getter = <span class="function">() =&gt;</span> <span class="title function_">callWithErrorHandling</span>(source, instance, <span class="title class_">ErrorCodes</span>.<span class="property">WATCH_GETTER</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            getter = <span class="function">() =&gt;</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (cleanup) &#123;</span><br><span class="line">                    <span class="title function_">cleanup</span>();</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">return</span> <span class="title function_">callWithAsyncErrorHandling</span>(</span><br><span class="line">                    source,</span><br><span class="line">                    instance,</span><br><span class="line">                    <span class="title class_">ErrorCodes</span>.<span class="property">WATCH_GETTER</span>,</span><br><span class="line">                    [onCleanup]</span><br><span class="line">                );</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        getter = <span class="title class_">Noop</span>;</span><br><span class="line">        <span class="title function_">warnInvalidSource</span>(s);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以发现<strong>watch</strong>实际通过<strong>doWatch</strong>实现的，<strong>doWatch</strong>第一步就是<strong>watch</strong>的参数<strong>source</strong>进行归一化处理。以达到我们访问<strong>getter</strong>会触发响应式数据的依赖收集的目的。</p>
+<h3 id="深层响应式处理"><a href="#深层响应式处理" class="headerlink" title="深层响应式处理"></a>深层响应式处理</h3><figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">doWatch</span>(<span class="params">source, cb, &#123; immediate, deep, flush, once, onTrack, onTrigger &#125; = EMPTY_OBJ</span>) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="keyword">if</span> (cb &amp;&amp; deep) &#123;</span><br><span class="line">        <span class="keyword">const</span> baseGetter = getter;</span><br><span class="line">        getter = <span class="function">() =&gt;</span> <span class="title function_">traverse</span>(<span class="title function_">baseGetter</span>());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">traverse</span>(<span class="params">value, depth, currentDepth = <span class="number">0</span>, seen</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!<span class="title function_">isObject</span>(value) || value[<span class="title class_">ReactiveFlags</span>.<span class="property">SKIP</span>]) &#123; <span class="comment">// 跳出递归方式</span></span><br><span class="line">        <span class="keyword">return</span> value;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (depth &amp;&amp; depth &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (currentDepth &gt;= depth) &#123;</span><br><span class="line">            <span class="keyword">return</span> value;</span><br><span class="line">        &#125;</span><br><span class="line">        currentDepth++;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    seen = seen || <span class="keyword">new</span> <span class="title class_">Set</span>();</span><br><span class="line">    <span class="keyword">if</span> (seen.<span class="title function_">has</span>(value)) &#123; <span class="comment">// 重复值则跳出</span></span><br><span class="line">        <span class="keyword">return</span> value;</span><br><span class="line">    &#125;</span><br><span class="line">    seen.<span class="title function_">add</span>(value);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 对各种类型进行属性访问，达到依赖收集效果</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="title function_">isRef</span>(value)) &#123;</span><br><span class="line">        <span class="title function_">traverse</span>(value.<span class="property">value</span>, depth, currentDepth, seen);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="title function_">isArray</span>(value)) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; value.<span class="property">length</span>; i++) &#123;</span><br><span class="line">            <span class="title function_">traverse</span>(value[i], depth, currentDepth, seen);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="title function_">isSet</span>(value) || <span class="title function_">isMap</span>(value)) &#123;</span><br><span class="line">        value.<span class="title function_">forEach</span>(<span class="function"><span class="params">v</span> =&gt;</span> &#123;</span><br><span class="line">            <span class="title function_">traverse</span>(v, depth, currentDepth, seen);</span><br><span class="line">        &#125;)</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="title function_">isPlainObject</span>(value)) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">const</span> key <span class="keyword">in</span> value) &#123;</span><br><span class="line">            <span class="title function_">traverse</span>(value[key], depth, currentDepth, seen);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以发现深层响应式处理核心在<strong>traverse</strong>函数，该函数为递归函数，当<strong>value</strong>不为对象时，直接返回<strong>value</strong>。 提供了<strong>depth</strong>对监听层级进行管理，不传则为深层监听。提供<strong>seen</strong>处理重复值跳出。最后时对不同类型对象属性进行访问，达到依赖收集的效果。</p>
+<h3 id="提供清理钩子"><a href="#提供清理钩子" class="headerlink" title="提供清理钩子"></a>提供清理钩子</h3><figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">doWatch</span>(<span class="params">source, cb, &#123; immediate, deep, flush, once, onTrack, onTrigger &#125; = EMPTY_OBJ</span>) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="comment">// 提供清理钩子</span></span><br><span class="line">    <span class="keyword">let</span> cleanup;</span><br><span class="line">    <span class="keyword">let</span> <span class="title function_">onCleanup</span> = fn =&gt; &#123;</span><br><span class="line">        cleanup = effect.<span class="property">onStop</span> = <span class="function">() =&gt;</span> &#123;</span><br><span class="line">            <span class="title function_">callWithErrorHandling</span>(fn, instance, <span class="title class_">ErrorCodes</span>.<span class="property">WATCH_CLEANUP</span>);</span><br><span class="line">            cleanup = effect.<span class="property">onStop</span> = <span class="literal">undefined</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> ssrCleanup;</span><br><span class="line">    <span class="keyword">if</span> (__SSR__ &amp;&amp; isInSSRComponentSetup) &#123;</span><br><span class="line">        onCleanup = <span class="title class_">Noop</span>;</span><br><span class="line">        <span class="keyword">if</span> (!cb) &#123;</span><br><span class="line">            <span class="title function_">getter</span>();</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (immediate) &#123;</span><br><span class="line">            <span class="title function_">callWithAsyncErrorHandling</span>(cb, instance, <span class="title class_">ErrorCodes</span>.<span class="property">WATCH_CALLBACK</span>, [</span><br><span class="line">                <span class="title function_">getter</span>(),</span><br><span class="line">                isMultiSource ? [] : <span class="literal">undefined</span>,</span><br><span class="line">                onCleanup</span><br><span class="line">            ]);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (flush === <span class="string">&#x27;sync&#x27;</span>) &#123;</span><br><span class="line">            <span class="keyword">const</span> ctx = <span class="title function_">useSSRContext</span>();</span><br><span class="line">            ssrCleanup = ctx.<span class="property">__watchHandles</span> || (ctx.<span class="property">__watchHandles</span> = []);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="variable constant_">NOOP</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>onCleanup</strong>将会成为<strong>cb</strong>的第三个实参，我们可以根据业务需要执行<strong>onCleanup</strong>。</p>
+<h3 id="定义工作函数"><a href="#定义工作函数" class="headerlink" title="定义工作函数"></a>定义工作函数</h3><figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">doWatch</span>(<span class="params">source, cb, &#123; immediate, deep, flush, once, onTrack, onTrigger &#125; = EMPTY_OBJ</span>) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="keyword">let</span> oldValue = isMultiSource ? <span class="keyword">new</span> <span class="title class_">Array</span>(source.<span class="property">length</span>).<span class="title function_">fill</span>(<span class="variable constant_">INITIAL_WATCHER_VALUE</span>) : <span class="variable constant_">INITIAL_WATCHER_VALUE</span>;</span><br><span class="line">    <span class="keyword">const</span> <span class="title function_">job</span> = (<span class="params"></span>) =&gt; &#123; <span class="comment">// 定义工作函数</span></span><br><span class="line">        <span class="keyword">if</span> (!effect.<span class="property">active</span> || !effect.<span class="property">dirty</span>) &#123; <span class="comment">// 不在响应式上下文或无脏值</span></span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (cb) &#123;</span><br><span class="line">            <span class="keyword">const</span> newValue = effect.<span class="title function_">run</span>();</span><br><span class="line">            <span class="keyword">if</span> (</span><br><span class="line">                deep ||</span><br><span class="line">                forceTrigger ||</span><br><span class="line">                (isMultiSource</span><br><span class="line">                    ? newValue.<span class="title function_">some</span>(<span class="function">(<span class="params">v, i</span>) =&gt;</span> <span class="title function_">hasChanged</span>(v, oldValue[i]))</span><br><span class="line">                    : <span class="title function_">hasChanged</span>(newValue, oldValue)</span><br><span class="line">                )</span><br><span class="line">            ) &#123;</span><br><span class="line">                <span class="keyword">if</span> (cleanup) &#123;</span><br><span class="line">                    <span class="title function_">cleanup</span>();</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="title function_">callWithAsyncErrorHandling</span>(cb, instance, <span class="title class_">ErrorCodes</span>.<span class="property">WATCH_CALLBACK</span>, [</span><br><span class="line">                    newValue,</span><br><span class="line">                    oldValue === <span class="variable constant_">INITIAL_WATCHER_VALUE</span></span><br><span class="line">                        ? <span class="literal">undefined</span></span><br><span class="line">                        : isMultiSource &amp;&amp; oldValue[<span class="number">0</span>] === <span class="variable constant_">INITIAL_WATCHER_VALUE</span></span><br><span class="line">                            ? []</span><br><span class="line">                            : oldValue,</span><br><span class="line">                    onCleanup</span><br><span class="line">                ]);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            effect.<span class="title function_">run</span>();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    job.<span class="property">allowRecurse</span> = !!cb;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以发现<strong>job</strong>函数主要逻辑是先判断<strong>watch</strong>函数执行上下文，以及是否有脏值，然后执行<strong>effect.run</strong>，即执行归一化化后的<strong>getter</strong>函数达到依赖收集效果。若接受了<strong>cb</strong>函数，根据是否存在脏值执行<strong>cb</strong>,b并更新<strong>oldValue</strong>值。</p>
+<h3 id="定义调度器"><a href="#定义调度器" class="headerlink" title="定义调度器"></a>定义调度器</h3><figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">doWatch</span>(<span class="params">source, cb, &#123; immediate, deep, flush, once, onTrack, onTrigger &#125; = EMPTY_OBJ</span>) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="keyword">let</span> scheduler; <span class="comment">// 定义调度器</span></span><br><span class="line">    <span class="keyword">if</span> (flush === <span class="string">&#x27;sync&#x27;</span>) &#123;</span><br><span class="line">        scheduler = job;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (flush === <span class="string">&#x27;post&#x27;</span>) &#123;</span><br><span class="line">        scheduler = <span class="function">() =&gt;</span> <span class="title function_">queuePostRenderEffect</span>(job, instance &amp;&amp; instance.<span class="property">suspense</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        job.<span class="property">pre</span> = <span class="literal">true</span>;</span><br><span class="line">        <span class="keyword">if</span> (instance) job.<span class="property">id</span> = instance.<span class="property">id</span>;</span><br><span class="line">        scheduler = <span class="function">() =&gt;</span> <span class="title function_">queueJob</span>(job);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="构建ReactiveEffect"><a href="#构建ReactiveEffect" class="headerlink" title="构建ReactiveEffect"></a>构建ReactiveEffect</h3><figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">doWatch</span>(<span class="params">source, cb, &#123; immediate, deep, flush, once, onTrack, onTrigger &#125; = EMPTY_OBJ</span>) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="keyword">const</span> effect = <span class="keyword">new</span> <span class="title class_">ReactiveEffect</span>(getter, <span class="variable constant_">NOOP</span>, scheduler);</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以发现前面定义的<strong>getter</strong>, <strong>job</strong>其实都是服务于构建<strong>ReactiveEffect</strong>实例的。</p>
+<h3 id="定义监听卸载"><a href="#定义监听卸载" class="headerlink" title="定义监听卸载"></a>定义监听卸载</h3><figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">doWatch</span>(<span class="params">source, cb, &#123; immediate, deep, flush, once, onTrack, onTrigger &#125; = EMPTY_OBJ</span>) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="keyword">const</span> scope = <span class="title function_">getCurrentScope</span>();</span><br><span class="line">    <span class="keyword">const</span> <span class="title function_">unwatch</span> = (<span class="params"></span>) =&gt; &#123;</span><br><span class="line">        effect.<span class="title function_">stop</span>(); <span class="comment">// 清楚依赖</span></span><br><span class="line">        <span class="keyword">if</span> (scope) &#123;</span><br><span class="line">            <span class="title function_">remove</span>(scope.<span class="property">effects</span>, effect);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="首次执行"><a href="#首次执行" class="headerlink" title="首次执行"></a>首次执行</h3><figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">doWatch</span>(<span class="params">source, cb, &#123; immediate, deep, flush, once, onTrack, onTrigger &#125; = EMPTY_OBJ</span>) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line"><span class="keyword">if</span> (cb) &#123;</span><br><span class="line">        <span class="keyword">if</span> (immediate) &#123;</span><br><span class="line">            <span class="title function_">job</span>();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            oldValue = effect.<span class="title function_">run</span>();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (flush === <span class="string">&#x27;post&#x27;</span>) &#123;</span><br><span class="line">        <span class="title function_">queuePostRenderEffect</span>(</span><br><span class="line">            effect.<span class="property">run</span>.<span class="title function_">bind</span>(effect),</span><br><span class="line">            instance &amp;&amp; instance.<span class="property">suspense</span></span><br><span class="line">        );</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        effect.<span class="title function_">run</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (__SSR__ &amp;&amp; ssrCleanup) ssrCleanup.<span class="title function_">push</span>(unwatch);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> unwatch;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>到这里<strong>doWatch</strong>流程就已经走完，我们对知识做个扩展，了解一下<strong>watchEffect</strong>是如何实现的</p>
+<h3 id="watchEffect"><a href="#watchEffect" class="headerlink" title="watchEffect"></a>watchEffect</h3><figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">watchEffect</span>(<span class="params">effect, options</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_">doWatch</span>(effect, <span class="literal">null</span>, options);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以发现，<strong>watchEffect</strong>实际上也是<strong>doWatch</strong>一种使用形式，传入<strong>source</strong>的值为函数，不传<strong>cb</strong>函数</p>
+</article><div class="tag_share"><div class="post-meta__tag-list"></div><div class="post_share"><div class="social-share" data-image="/img/up.jpg" data-sites="wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i>赞助</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/reward_wechat.jpg" target="_blank"><img class="post-qr-code-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/img/reward_wechat.jpg" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/04/05/%E6%BA%90%E7%A0%81/vue3/reactivity/apiInject/" title="响应式原理：依赖注入实现跨级组件数据共享"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/img/default_bg.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">响应式原理：依赖注入实现跨级组件数据共享</div></div></a></div><div class="next-post pull-right"><a href="/2024/04/03/%E6%BA%90%E7%A0%81/vue3/reactivity/reactive/" title="响应式原理：Reactive对象解析"><div class="cover" style="background: #e7817c"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">响应式原理：Reactive对象解析</div></div></a></div></nav><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="gitalk-container"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E6%95%B0%E5%BD%92%E4%B8%80%E5%8C%96"><span class="toc-number">1.</span> <span class="toc-text">参数归一化</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B7%B1%E5%B1%82%E5%93%8D%E5%BA%94%E5%BC%8F%E5%A4%84%E7%90%86"><span class="toc-number">2.</span> <span class="toc-text">深层响应式处理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8F%90%E4%BE%9B%E6%B8%85%E7%90%86%E9%92%A9%E5%AD%90"><span class="toc-number">3.</span> <span class="toc-text">提供清理钩子</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89%E5%B7%A5%E4%BD%9C%E5%87%BD%E6%95%B0"><span class="toc-number">4.</span> <span class="toc-text">定义工作函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89%E8%B0%83%E5%BA%A6%E5%99%A8"><span class="toc-number">5.</span> <span class="toc-text">定义调度器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9E%84%E5%BB%BAReactiveEffect"><span class="toc-number">6.</span> <span class="toc-text">构建ReactiveEffect</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89%E7%9B%91%E5%90%AC%E5%8D%B8%E8%BD%BD"><span class="toc-number">7.</span> <span class="toc-text">定义监听卸载</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A6%96%E6%AC%A1%E6%89%A7%E8%A1%8C"><span class="toc-number">8.</span> <span class="toc-text">首次执行</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#watchEffect"><span class="toc-number">9.</span> <span class="toc-text">watchEffect</span></a></li></ol></div></div></div></div></main><footer id="footer" style="background: #f0bc6c"><div id="footer-wrap"><div class="copyright">&copy;2023 - 2024 By 屯货三旬</div><div class="framework-info"><span>框架 </span><a href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text">你好, 欢迎来到我的 <a href="https://sanxun8.github.io/">博客</a>!</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="translateLink" type="button" title="简繁转换">簡</button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload/dist/lazyload.iife.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script>function panguFn () {
+  if (typeof pangu === 'object') pangu.autoSpacingPage()
+  else {
+    getScript('https://cdn.jsdelivr.net/npm/pangu/dist/browser/pangu.min.js')
+      .then(() => {
+        pangu.autoSpacingPage()
+      })
+  }
+}
+
+function panguInit () {
+  if (false){
+    GLOBAL_CONFIG_SITE.isPost && panguFn()
+  } else {
+    panguFn()
+  }
+}
+
+document.addEventListener('DOMContentLoaded', panguInit)</script><div class="js-pjax"><script>(() => {
+  const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+  if ($mermaid.length === 0) return
+  const runMermaid = () => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    Array.from($mermaid).forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = '%%{init:{ \'theme\':\'' + theme + '\'}}%%\n'
+      const mermaidID = 'mermaid-' + index
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+
+      const renderV10 = () => {
+        renderFn.then(({svg}) => {
+          mermaidSrc.insertAdjacentHTML('afterend', svg)
+        })
+      }
+
+      const renderV9 = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      typeof renderFn === 'string' ? renderV9(renderFn) : renderV10()
+    })
+  }
+
+  const loadMermaid = () => {
+    window.loadMermaid ? runMermaid() : getScript('https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js').then(runMermaid)
+  }
+
+  btf.addGlobalFn('themeChange', runMermaid, 'mermaid')
+
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const initGitalk = () => {
+    const gitalk = new Gitalk(Object.assign({
+      clientID: 'a7e226712afdd1bf77a5',
+      clientSecret: '8c64262f70f849d8bfff428094cc5ed2f46fafc6',
+      repo: 'gitalk-comments',
+      owner: 'sanxun8',
+      admin: ['sanxun8'],
+      id: '2115177c5bcb9349a2cd1a09835d9d5a',
+      updateCountCallback: commentCount
+    },null))
+
+    gitalk.render('gitalk-container')
+  }
+
+  const loadGitalk = async() => {
+    if (typeof Gitalk === 'function') initGitalk()
+    else {
+      await getCSS('https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css')
+      await getScript('https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js')
+      initGitalk()
+    }
+  }
+  
+  const commentCount = n => {
+    const isCommentCount = document.querySelector('#post-meta .gitalk-comment-count')
+    if (isCommentCount) {
+      isCommentCount.textContent= n
+    }
+  }
+
+  if ('Gitalk' === 'Gitalk' || !false) {
+    if (false) btf.loadComment(document.getElementById('gitalk-container'), loadGitalk)
+    else loadGitalk()
+  } else {
+    window.loadOtherComment = loadGitalk
+  }
+})()</script></div><script defer="defer" id="ribbon" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-ribbon.min.js" size="150" alpha="0.6" zIndex="-1" mobile="false" data-click="false"></script><script id="click-show-text" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/click-show-text.min.js" data-mobile="false" data-text="I,LOVE,YOU" data-fontsize="15px" data-random="false" async="async"></script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>let pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+var pjax = new Pjax({
+  elements: 'a:not([target="_blank"])',
+  selectors: pjaxSelectors,
+  cacheBust: false,
+  analytics: false,
+  scrollRestoration: false
+})
+
+document.addEventListener('pjax:send', function () {
+
+  // removeEventListener
+  btf.removeGlobalFnEvent('pjax')
+  btf.removeGlobalFnEvent('themeChange')
+
+  document.getElementById('rightside').classList.remove('rightside-show')
+  
+  if (window.aplayers) {
+    for (let i = 0; i < window.aplayers.length; i++) {
+      if (!window.aplayers[i].options.fixed) {
+        window.aplayers[i].destroy()
+      }
+    }
+  }
+
+  typeof typed === 'object' && typed.destroy()
+
+  //reset readmode
+  const $bodyClassList = document.body.classList
+  $bodyClassList.contains('read-mode') && $bodyClassList.remove('read-mode')
+
+  typeof disqusjs === 'object' && disqusjs.destroy()
+})
+
+document.addEventListener('pjax:complete', function () {
+  window.refreshFn()
+
+  document.querySelectorAll('script[data-pjax]').forEach(item => {
+    const newScript = document.createElement('script')
+    const content = item.text || item.textContent || item.innerHTML || ""
+    Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+    newScript.appendChild(document.createTextNode(content))
+    item.parentNode.replaceChild(newScript, item)
+  })
+
+  GLOBAL_CONFIG.islazyload && window.lazyLoadInstance.update()
+
+  typeof panguInit === 'function' && panguInit()
+
+  // google analytics
+  typeof gtag === 'function' && gtag('config', '', {'page_path': window.location.pathname});
+
+  // baidu analytics
+  typeof _hmt === 'object' && _hmt.push(['_trackPageview',window.location.pathname]);
+
+  typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+
+  // prismjs
+  typeof Prism === 'object' && Prism.highlightAll()
+})
+
+document.addEventListener('pjax:error', e => {
+  if (e.request.status === 404) {
+    pjax.loadUrl('/404.html')
+  }
+})</script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div class="no-result" id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div></body></html>
